@@ -17,7 +17,7 @@ namespace Bonweb\Laracart;
  * @property \Carbon\Carbon $created_at 
  * @property \Carbon\Carbon $updated_at 
  * @property \Carbon\Carbon $deleted_at 
- * @property integer $_lft 
+ * @property integer $_lft
  * @property integer $_rgt 
  * @property integer $parent_id 
  * @property-read Category $parent 
@@ -80,4 +80,4 @@ class Category extends \Kalnoy\Nestedset\Node implements SluggableInterface {
         return $parent ? $parent->path().' > '.$this->title : $this->title;
     }
 
-} 
+}

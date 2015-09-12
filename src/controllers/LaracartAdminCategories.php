@@ -23,7 +23,7 @@ class LaracartAdminCategories extends \LaradminBaseController
 
     public function update($id=0) {
         $category = Category::findOrNew($id);
-        return View::make('laracart::categories.update')->withCategory( $category )->withCategories( Category::get()->toTree() );
+        return View::make('laracart::categories.update')->withCategory( $category )->withCategories( Category::withTrashed()->get()->toTree() );
     }
 
     public function save($id=0) {
@@ -45,10 +45,12 @@ class LaracartAdminCategories extends \LaradminBaseController
             if ($o->trashed()) {
                 $tree = $o->children()->withTrashed()->get()->toTree();
                 $this->deleteCategoryProducts($tree);
-                $o->forceDelete();
+                foreach ($tree as $c) {
+                    $c->forceDelete();
+                }
             }
             else {
-                $o->delete();
+                $o->forceDelete();
             }
             return Redirect::back()->withMessage( $message );
         }
