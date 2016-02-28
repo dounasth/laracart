@@ -1,9 +1,14 @@
+@if ($product instanceof Bonweb\Laracart\Product)
+@else
+@var $product = Bonweb\Laracart\Product::find($product)
+@endif
+
 @var $imp = \ImportProducts::whereProductId($product->id)->first()
 @var $merchant = \Merchant::whereId($imp->merchant_id)->first()
 
 <div class="product mini" data-id="{{$product->id}}">
     <div class="image">
-        <a target="_blank" rel="nofollow" href="{{ ($product->affiliateUrl) ? $product->affiliateUrl->url.'&subid1=shoes-findemall' : '#' }}">
+        <a target="_blank" rel="nofollow" href="{{ $product->getAffiliateRoute() }}">
             @if ($merchant->id == 18)
             <img src="{{ $product->mainPhoto()->httpPath() }}" alt="{{ $product->title }}" class="img-responsive">
             @else
@@ -14,25 +19,26 @@
             @if (false)
             <span class="new-product"> NEW</span>
             @endif
-            @if (fn_is_not_empty($product->meta('discount')))
-            <span class="discount">{{(int)$product->meta('discount')}}% OFF</span>
+            @if ( (int)$product->prices->discount() > 0 )
+            <span class="discount">{{(int)$product->prices->discount() }}% Έκπτωση</span>
             @endif
         </div>
     </div>
+    <div>{{$product->meta('brand')}}</div>
     <div class="">
-        <h4><a target="_blank" rel="nofollow" href="{{ ($product->affiliateUrl) ? $product->affiliateUrl->url.'&subid1=shoes-findemall' : '#' }}">{{ $product->title }}</a></h4>
+        <h4><a target="_blank" rel="nofollow" href="{{ $product->getAffiliateRoute() }}">{{ $product->title }}</a></h4>
         <div class="">
-            <p class="tags truncate">
-                @foreach ($product->tagged as $tag)
-                {{$tag->tag_name}},
-                @endforeach
-            </p>
             <p>
-
                 <a target="_blank" rel="nofollow" href="{{ $merchant->merchant_url }}" target="_blank" style="display: inline;">
-                    {{ $merchant->name }}
+                    στο {{ $merchant->name }}
                 </a>
             </p>
         </div>
+    </div>
+    <div class="price">
+        <span>&euro;{{$product->prices->price}}</span>
+        @if ($product->prices->list_price > $product->prices->price)
+        <span class="old-price">&euro;{{$product->prices->list_price}}</span>
+        @endif
     </div>
 </div>
