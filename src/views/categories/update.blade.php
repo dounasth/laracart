@@ -25,10 +25,10 @@
 
 @section('content')
 <div class="box box-primary">
-    {{ Form::open(array('route' => ['cart.categories.save', $category->id], 'method' => 'POST', 'role' => 'form')) }}
+    {{ Form::open(array('route' => ['cart.categories.save', $category->id], 'method' => 'POST', 'role' => 'form', 'files' => true)) }}
     <div class="box-body">
         <div class="row">
-        	<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
+        	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-8">
                 <h2>General</h2>
                 <div class="form-group">
                     {{ Form::label('parent_id', 'Parent:') }}
@@ -42,6 +42,10 @@
                     {{ Form::text('category[title]', $category->title, array('class' => 'form-control')) }}
                 </div>
                 <div class="form-group">
+                    {{ Form::label('seo-title', 'SEO Title:') }}
+                    {{ Form::text('seo[title]', ($category->seo) ? $category->seo->title : '', array('class' => 'form-control')) }}
+                </div>
+                <div class="form-group">
                     {{ Form::label('slug', 'Slug:') }}
                     {{ Form::text('category[slug]', $category->slug, array('class' => 'form-control')) }}
                 </div>
@@ -50,11 +54,19 @@
                     {{ Form::textarea('category[description]', $category->description, array('class' => 'form-control')) }}
                 </div>
                 <div class="form-group">
+                    {{ Form::label('seo-description', 'Meta Description:') }}
+                    {{ Form::textarea('seo[description]', ($category->seo) ? $category->seo->description : '', array('class' => 'form-control')) }}
+                </div>
+                <div class="form-group">
+                    {{ Form::label('seo-keywords', 'Meta Keywords:') }}
+                    {{ Form::textarea('seo[keywords]', ($category->seo) ? $category->seo->keywords : '', array('class' => 'form-control')) }}
+                </div>
+                <div class="form-group">
                     {{ Form::label('status', 'Status:') }}
                     {{ Form::select('category[status]', array('A' => 'Active', 'D' => 'Disabled'), $category->status, array('class' => 'form-control')) }}
                 </div>
         	</div>
-            <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4">
                 <h2>Timestamps</h2>
             	<div class="form-group">
                     {{ Form::label('', 'Updated@: '.$category->updated_at) }}

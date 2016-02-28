@@ -42,6 +42,7 @@
         queryTokenizer: Bloodhound.tokenizers.whitespace,
         prefetch: {
             url: '/json/tags',
+            cache: false,
             filter: function(list) {
                 return $.map(list, function(cityname) {
                     return { name: cityname }; });
@@ -66,7 +67,10 @@
             return Bloodhound.tokenizers.whitespace(d.name);
         },
         queryTokenizer: Bloodhound.tokenizers.whitespace,
-        prefetch: '/json/categories'
+        prefetch: {
+            url: '/json/categories',
+            cache: false
+        }
     });
     categories.initialize();
 

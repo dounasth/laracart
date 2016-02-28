@@ -3,6 +3,7 @@
 namespace Bonweb\Laracart;
 
 use Bonweb\Laradmin\Photo;
+use Bonweb\Laradmin\Searchable;
 use Cviebrock\EloquentSluggable\SluggableInterface;
 use Cviebrock\EloquentSluggable\SluggableTrait;
 use Illuminate\Database\Eloquent\MassAssignmentException;
@@ -39,26 +40,18 @@ use Mmanos\Metable\Metable;
  */
 class Product extends \Eloquent implements SluggableInterface{
 
-//    /**
-//     * @var
-//     */
-//    public $price;
-//    /**
-//     * @var
-//     */
-//    public $list_price;
-//    /**
-//     * @var
-//     */
-//    public $title;
-//    /**
-//     * @var
-//     */
-//    public $full_description;
-//    /**
-//     * @var
-//     */
-//    public $short_description;
+    use Searchable;
+    protected $searchable = [
+        'columns' => [
+            'cart_products.sku' => 1,
+            'cart_products.title' => 1,
+            'cart_products.slug' => 1,
+//            'cart_product_meta.value' => 1,
+        ],
+//        'joins' => [
+//            'cart_product_meta' => ['cart_products.id','cart_product_meta.xref_id'],
+//        ],
+    ];
 
     use SluggableTrait;
     use SoftDeletingTrait;
@@ -190,11 +183,18 @@ class Product extends \Eloquent implements SluggableInterface{
 
     public function delete()
     {
-        if ($this->trashed()) {
+        if ($this->forceDeleting) {
             $this->categories()->sync([]);
             $this->descriptions()->delete();
             $this->prices()->delete();
             $this->affiliateUrl()->delete();
+            foreach ($this->seo() as $seo) {
+                $seo->delete();
+            }
+            foreach ($this->photos() as $photo) {
+                $photo->delete();
+            }
+            //  also delete meta
         }
         parent::delete();
     }
@@ -205,6 +205,24 @@ class Product extends \Eloquent implements SluggableInterface{
 
     public function affiliateUrl() {
         return $this->hasOne('Bonweb\Laracart\ProductUrl', 'product_id', 'id');
+    }
+
+    public function getAffiliateUrl() {
+        if (fn_is_not_empty($this->affiliateUrl)) {
+            $subID = \Config::get("laraffiliate::general.subID");
+            if (fn_is_not_empty($subID)) {
+                $subID = '&subid1='.$subID;
+            }
+            return $this->affiliateUrl->url.$subID;
+        }
+        else return '';
+    }
+
+    public function getAffiliateRoute() {
+        if (fn_is_not_empty($this->affiliateUrl)) {
+            return route('site.cart.product.affiliate', [$this->slug]);
+        }
+        else return '#';
     }
 
     public function descriptions() {
@@ -310,6 +328,38 @@ class Product extends \Eloquent implements SluggableInterface{
     public function seo()
     {
         return $this->morphOne('Bonweb\Laradmin\Seo', 'seoble');
+    }
+
+    public static function tagsFor($products) {
+        $tags = array();
+        $sorter = array();
+        foreach ($products as $product) {
+            foreach ($product->tagged as $tag) {
+                $count = (isset($tags[$tag->tag_slug]->count)) ? $tags[$tag->tag_slug]->count : 0 ;
+//                $tags[$tag->tag_slug] = array(
+//                    'slug' => $tag->tag_slug,
+//                    'name' => $tag->tag_name,
+//                    'count' =>  $count+1,
+//                );
+                $tags[$tag->tag_slug] = new \stdClass();
+                $tags[$tag->tag_slug]->slug = $tag->tag_slug;
+                $tags[$tag->tag_slug]->name = $tag->tag_name;
+                $tags[$tag->tag_slug]->count = $count+1;
+                $sorter[$tag->tag_slug] = $count+1;
+            }
+        }
+        array_multisort($sorter, SORT_DESC, $tags);
+        return $tags;
+    }
+
+    public function scopeEnabled($query)
+    {
+        return $query->whereStatus('A');
+    }
+
+    public function scopeRecent($query)
+    {
+        return $query->orderBy('id', 'desc');
     }
 
 

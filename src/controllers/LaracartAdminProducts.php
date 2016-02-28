@@ -20,7 +20,7 @@ class LaracartAdminProducts extends \LaradminBaseController
         $product = Product::findOrNew($id);
         return View::make('laracart::products.update')
                 ->withProduct( $product )
-                ->withCategories( Category::get()->toTree() );
+                ->withCategories( Category::defaultOrder()->get()->toTree() );
     }
 
     public function save($id=0) {
@@ -40,8 +40,13 @@ class LaracartAdminProducts extends \LaradminBaseController
         $product->saveMeta($meta);
 
         $seo = Input::get('seo', []);
-        $seo = \Bonweb\Laradmin\Seo::create($seo);
-        $product->seo()->save($seo);
+        if ($product->seo) {
+            $product->seo->fill($seo)->save();
+        }
+        else {
+            $seo = \Bonweb\Laradmin\Seo::create($seo);
+            $product->seo()->save($seo);
+        }
 
         return Redirect::route('cart.products.update', [$product->id])->withMessage( AlertMessage::success('Product saved') );
     }

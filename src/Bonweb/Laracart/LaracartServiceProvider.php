@@ -19,9 +19,9 @@ class LaracartServiceProvider extends ServiceProvider {
 	public function boot()
 	{
 		$this->package('bonweb/laracart');
-        include __DIR__.'/../../events.php';
-        include __DIR__.'/../../filters.php';
-        include __DIR__.'/../../routes.php';
+        include_once __DIR__.'/../../events.php';
+        include_once __DIR__.'/../../filters.php';
+        include_once __DIR__.'/../../routes.php';
 	}
 
 	/**

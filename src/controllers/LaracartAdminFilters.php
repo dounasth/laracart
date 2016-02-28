@@ -18,7 +18,7 @@ class LaracartAdminFilters extends \LaradminBaseController
         $filter = Filter::findOrNew($id);
         return View::make('laracart::filters.update')
                 ->withFilter( $filter )
-                ->withCategories( Category::get()->toTree() );
+                ->withCategories( Category::defaultOrder()->get()->toTree() );
     }
 
     public function save($id=0) {
@@ -35,8 +35,13 @@ class LaracartAdminFilters extends \LaradminBaseController
         $filter->save();
 
         $seo = Input::get('seo', []);
-        $seo = \Bonweb\Laradmin\Seo::create($seo);
-        $filter->seo()->save($seo);
+        if ($filter->seo) {
+            $filter->seo->fill($seo)->save();
+        }
+        else {
+            $seo = \Bonweb\Laradmin\Seo::create($seo);
+            $filter->seo()->save($seo);
+        }
 
         return Redirect::route('cart.filters.update', [$filter->id])->withMessage( AlertMessage::success('Filter saved') );
     }

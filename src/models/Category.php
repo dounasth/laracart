@@ -36,11 +36,21 @@ namespace Bonweb\Laracart;
  */
 
 
+use Bonweb\Laradmin\Searchable;
 use Illuminate\Database\Eloquent\SoftDeletingTrait;
 use Cviebrock\EloquentSluggable\SluggableInterface;
 use Cviebrock\EloquentSluggable\SluggableTrait;
 
 class Category extends \Kalnoy\Nestedset\Node implements SluggableInterface {
+
+    use Searchable;
+    protected $searchable = [
+        'columns' => [
+            'title' => 1,
+            'slug' => 1,
+            'description' => 1,
+        ],
+    ];
 
     use SluggableTrait;
     use SoftDeletingTrait;
@@ -66,7 +76,9 @@ class Category extends \Kalnoy\Nestedset\Node implements SluggableInterface {
 
     public function save(array $options = array())
     {
-        $this->sluggify(true);
+        if ($this->needsSlugging()) {
+            $this->sluggify(true);
+        }
         return parent::save($options);
     }
 
@@ -77,7 +89,30 @@ class Category extends \Kalnoy\Nestedset\Node implements SluggableInterface {
     public function path()
     {
         $parent = $this->parent;
-        return $parent ? $parent->path().' > '.$this->title : $this->title;
+        return $parent ? $parent->path().' / '.$this->title : $this->title;
+    }
+
+    public function seo()
+    {
+        return $this->morphOne('Bonweb\Laradmin\Seo', 'seoble');
+    }
+
+    public static function scopeBasics($query) {
+        return $query->withDepth()->having('depth', '=', 0);
+    }
+
+    public static function scopeLevel($query, $level) {
+        return $query->withDepth()->having('depth', '=', $level);
+    }
+
+    public function scopeEnabled($query)
+    {
+        return $query->whereStatus('A');
+    }
+
+    public function scopeSorted($query, $type='asc')
+    {
+        return $query->orderBy('_lft', 'asc');
     }
 
 }

@@ -30,4 +30,8 @@ class Price extends \Illuminate\Database\Eloquent\Model{
         return $this->belongsTo('Bonweb\Laracart\Product', 'product_id', 'id');
     }
 
+    public function discount() {
+        return (1- round(($this->price / $this->list_price), 2)) * 100;
+    }
+
 }

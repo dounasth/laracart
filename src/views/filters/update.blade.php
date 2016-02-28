@@ -42,6 +42,7 @@
         queryTokenizer: Bloodhound.tokenizers.whitespace,
         prefetch: {
             url: '/json/tags',
+            cache: false,
             filter: function(list) {
                 return $.map(list, function(cityname) {
                     return { name: cityname }; });
@@ -66,7 +67,10 @@
             return Bloodhound.tokenizers.whitespace(d.name);
         },
         queryTokenizer: Bloodhound.tokenizers.whitespace,
-        prefetch: '/json/categories'
+        prefetch: {
+            url: '/json/categories',
+            cache: false
+        }
     });
     categories.initialize();
 
@@ -135,6 +139,18 @@
                 <div class="form-group">
                     {{ Form::label('slug', 'Slug:') }}
                     {{ Form::text('filter[slug]', $filter->slug, array('class' => 'form-control')) }}
+                </div>
+                <div class="form-group">
+                    {{ Form::label('show_on_canonical', 'Show on Canonical Url:') }}
+                    {{ Form::select('filter[show_on_canonical]', array('1' => 'Yes', '0' => 'No'), $filter->show_on_canonical, array('class' => 'form-control')) }}
+                </div>
+                <div class="form-group">
+                    {{ Form::label('indexing', 'REL Index:') }}
+                    {{ Form::select('filter[indexing]', array('1' => 'Yes', '0' => 'No'), $filter->indexing, array('class' => 'form-control')) }}
+                </div>
+                <div class="form-group">
+                    {{ Form::label('follow', 'REL Follow:') }}
+                    {{ Form::select('filter[follow]', array('1' => 'Yes', '0' => 'No'), $filter->follow, array('class' => 'form-control')) }}
                 </div>
                 <div class="form-group">
                     {{ Form::label('seo-description', 'Meta Description:') }}
