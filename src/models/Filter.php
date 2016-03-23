@@ -2,6 +2,7 @@
 
 namespace Bonweb\Laracart;
 
+use Bonweb\Laradmin\ProductMeta;
 use Conner\Tagging\Tag;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingTrait;
@@ -53,12 +54,12 @@ class Filter extends Model implements SluggableInterface {
     public static function forBlock($product_ids) {
         $filters = array();
         $request = Input::all();
-        $all_filters = Filter::all();
+        $all_filters = Filter::remember(3600*24)->get();
         foreach($all_filters as $filter) {
             $filter_values = $filter->values($product_ids);
             if (count($filter_values)) {
                 $filters[] = array(
-                    'data' => $filter,
+                    'data' => $filter->toArray(),
                     'values' => $filter_values,
                     'selected' => array_key_exists($filter->slug, $request) ? $request[$filter->slug] : ''
                 );
@@ -85,12 +86,12 @@ class Filter extends Model implements SluggableInterface {
     public function values($product_ids) {
         $values = array();
         if ($product_ids && $this->meta) {
-            $values  = \Cache::remember($this->meta->id.md5(implode(',', $product_ids)), \Config::get('laracart::general.cache.product-meta'), function() use ($product_ids)
-            {
-                $values = \Bonweb\Laradmin\ProductMeta::select('value')->whereIn('xref_id', $product_ids)->whereMetaId($this->meta->id);
-                $values = $values->distinct()->lists('value');
-                return $values;
-            });
+            $values = ProductMeta::rawdb();
+            $values = $values->select('value')->distinct();
+            foreach ($product_ids as $q) {
+                $values = $values->whereRaw("xref_id IN ({$q})");
+            }
+            $values = $values->whereMetaId($this->meta->id)->remember(3600*24)->lists('value');
         }
         sort($values, SORT_STRING);
         return $values;
@@ -101,6 +102,8 @@ class Filter extends Model implements SluggableInterface {
         if (Input::get('with', false)) $current_filters['with'] = Input::get('with');
 //        if (Input::get('page', false)) $current_filters['page'] = Input::get('page');
         if ($filter_slug && $filter_value) $current_filters[$filter_slug] = $filter_value;
+        if (Input::get('orderBy', false)) $current_filters['orderBy'] = Input::get('orderBy');
+        if (Input::get('orderType', false)) $current_filters['orderType'] = Input::get('orderType');
         return $current_filters;
     }
 
@@ -134,17 +137,40 @@ class Filter extends Model implements SluggableInterface {
     }
 
     public static function current($onlyCanonical=false, $full=false){
+        if (($onlyCanonical != false || $full != false ) || !isset($_REQUEST["filters-current"])) {
+            $current_filters = array();
+            $request = Input::all();
+            ksort($request);
+            foreach ($request as $k => $v) {
+                $filter = Filter::whereSlug($k)->remember(3600*24)->first();
+                if ($filter) {
+                    if (!$onlyCanonical || ($onlyCanonical && $filter->show_on_canonical)) {
+                        if ($full) {
+                            $current_filters[$k] = $filter;
+                        }
+                        else $current_filters[$k] = $v;
+                    }
+                }
+            }
+            if ($onlyCanonical == false && $full == false ) {
+                $_REQUEST["filters-current"] = $current_filters;
+            }
+        }
+        else $current_filters = $_REQUEST["filters-current"];
+        return $current_filters;
+    }
+    public static function current2($onlyCanonical=false, $full=false){
         $current_filters = array();
         $request = Input::all();
         ksort($request);
         foreach ($request as $k => $v) {
-            $filter = Filter::whereSlug($k)->first();
+            $filter = Filter::whereSlug($k)->remember(3600*24)->first();
             if ($filter) {
                 if (!$onlyCanonical || ($onlyCanonical && $filter->show_on_canonical)) {
                     if ($full) {
-                        $current_filters[$k] = $filter;
+                        $current_filters[$filter->meta_id] = $filter;
                     }
-                    else $current_filters[$k] = $v;
+                    else $current_filters[$filter->meta_id] = $v;
                 }
             }
         }

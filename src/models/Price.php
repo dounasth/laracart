@@ -12,8 +12,6 @@ namespace Bonweb\Laracart;
  * @property-read \Product $product 
  * @method static \Illuminate\Database\Query\Builder|\Price whereId($value)
  * @method static \Illuminate\Database\Query\Builder|\Price whereProductId($value)
- * @method static \Illuminate\Database\Query\Builder|\Price whereType($value)
- * @method static \Illuminate\Database\Query\Builder|\Price wherePrice($value)
  */
 class Price extends \Illuminate\Database\Eloquent\Model{
 

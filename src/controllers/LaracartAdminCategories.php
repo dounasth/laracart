@@ -15,7 +15,7 @@ class LaracartAdminCategories extends \LaradminBaseController
 
     public function update($id=0) {
         $category = Category::findOrNew($id);
-        return View::make('laracart::categories.update')->withCategory( $category )->withCategories( Category::defaultOrder()->withTrashed()->get()->toTree() );
+        return View::make('laracart::categories.update')->withCategory( $category );
     }
 
     public function save($id=0) {

@@ -31,7 +31,15 @@ class LaracartServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		//
+		/*
+		 * Register the service provider for the dependency.
+		 */
+		$this->app->register('Gloudemans\Shoppingcart\ShoppingcartServiceProvider');
+		/*
+         * Create aliases for the dependency.
+         */
+		$loader = \Illuminate\Foundation\AliasLoader::getInstance();
+		$loader->alias('Cart', 'Gloudemans\Shoppingcart\Facades\Cart');
 	}
 
 	/**

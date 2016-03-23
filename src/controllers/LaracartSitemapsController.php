@@ -14,7 +14,9 @@ class LaracartSitemapsController extends \LaradminBaseController
             Sitemap::addTag(route('site.cart.category.view', $category->slug), '', 'daily', '0.8');
         }
 
-        return Sitemap::xml();
+        $response = Response::make(Sitemap::xml(), 200);
+        $response->header('Content-Type', 'text/xml');
+        return $response;
     }
 
     public function tags()
@@ -30,7 +32,9 @@ class LaracartSitemapsController extends \LaradminBaseController
             $this->recursive([$tag]);
         }
 
-        return Sitemap::xml();
+        $response = Response::make(Sitemap::xml(), 200);
+        $response->header('Content-Type', 'text/xml');
+        return $response;
     }
 
     public function recursive($withTags) {
@@ -97,6 +101,8 @@ class LaracartSitemapsController extends \LaradminBaseController
             Sitemap::addTag(route('site.coupons.one', [$offer->creative_id]), date('Y-m-d H:i:s'), 'daily', '0.8');
         }
 
-        return Sitemap::xml();
+        $response = Response::make(Sitemap::xml(), 200);
+        $response->header('Content-Type', 'text/xml');
+        return $response;
     }
 }

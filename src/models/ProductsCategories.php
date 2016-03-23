@@ -21,4 +21,8 @@ class ProductsCategories extends \Eloquent {
         return $this->morphMany('Bonweb\Laracart\Product', 'product', 'id', 'product_id');
     }
 
+    public static function rawdb(){
+        $t = new ProductsCategories();
+        return \DB::table($t->table);
+    }
 }

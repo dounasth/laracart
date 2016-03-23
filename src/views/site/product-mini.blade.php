@@ -1,15 +1,13 @@
+
 @if ($product instanceof Bonweb\Laracart\Product)
 @else
 @var $product = Bonweb\Laracart\Product::find($product)
 @endif
 
-@var $imp = \ImportProducts::whereProductId($product->id)->first()
-@var $merchant = \Merchant::whereId($imp->merchant_id)->first()
-
 <div class="product mini" data-id="{{$product->id}}">
     <div class="image">
         <a target="_blank" rel="nofollow" href="{{ $product->getAffiliateRoute() }}">
-            @if ($merchant->id == 18)
+            @if (@$product->imported->merchant->id == 18)
             <img src="{{ $product->mainPhoto()->httpPath() }}" alt="{{ $product->title }}" class="img-responsive">
             @else
             <img src="{{ $product->mainPhoto()->photon(260) }}" alt="{{ $product->title }}" class="img-responsive">
@@ -29,8 +27,8 @@
         <h4><a target="_blank" rel="nofollow" href="{{ $product->getAffiliateRoute() }}">{{ $product->title }}</a></h4>
         <div class="">
             <p>
-                <a target="_blank" rel="nofollow" href="{{ $merchant->merchant_url }}" target="_blank" style="display: inline;">
-                    στο {{ $merchant->name }}
+                <a target="_blank" rel="nofollow" href="{{ @$product->imported->merchant->merchant_url }}" target="_blank" style="display: inline;">
+                    στο {{ @$product->imported->merchant->name }}
                 </a>
             </p>
         </div>

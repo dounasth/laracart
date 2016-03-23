@@ -62,7 +62,7 @@ class Category extends \Kalnoy\Nestedset\Node implements SluggableInterface {
     protected $fillable = array('title', 'slug', 'description', 'status', 'parent_id');
 
     protected $sluggable = array(
-        'build_from' => 'title',
+        'build_from' => ['title'],
         'save_to'    => 'slug',
         'max_length' => null,
         'method' => ['GreekSlugGenerator','get_slug'],
@@ -84,6 +84,10 @@ class Category extends \Kalnoy\Nestedset\Node implements SluggableInterface {
 
     public function products() {
         return $this->belongsToMany('Bonweb\Laracart\Product', 'cart_products_categories', 'category_id', 'product_id');
+    }
+
+    public function enabledProductsCount() {
+        return $this->products()->enabled()->get()->count();
     }
 
     public function path()
@@ -113,6 +117,16 @@ class Category extends \Kalnoy\Nestedset\Node implements SluggableInterface {
     public function scopeSorted($query, $type='asc')
     {
         return $query->orderBy('_lft', 'asc');
+    }
+
+    public static function cachedTree() {
+        $t = new static;
+        return $t->defaultOrder()->enabled()->remember(3600*24, 'site-categories')->get()->toTree();
+    }
+
+    public static function cachedRoot() {
+        $t = new static;
+        return $t->defaultOrder()->basics()->remember(3600*24, 'site-categories-root')->take(5)->get();
     }
 
 }

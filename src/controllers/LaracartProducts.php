@@ -1,6 +1,7 @@
 <?php
 
 use Bonweb\Laracart\Product;
+use Bonweb\Laracart\ProductsCategories;
 use Bonweb\Laracart\Category;
 use Bonweb\Laracart\Filter;
 use Conner\Tagging\Tag;
@@ -26,60 +27,72 @@ class LaracartProducts extends \LaradminBaseController
     }
 
     public function viewCategory($slug, $tags=false) {
-        Debugbar::addMessage($tags);
         set_time_limit(1800);
         ini_set('memory_limit', '1024M');
-        $category = Category::whereSlug($slug)->withDepth()->first();
+        $category = Category::whereSlug($slug)->withDepth()->with('seo')->remember(Config::get('laracart::general.cache.category'))->first();
+
         if ($category) {
 
-            $product_ids = $category->products()->select('cart_products.id')->enabled()->lists('cart_products.id');
-            $filters = Filter::current();
+            $allcats = [$category->id];
+
+//            if ($category->depth >= 0) {
+                $allcats = array_merge($allcats, $category->descendants()->remember(Config::get('laracart::general.cache.category'))->lists('id'));
+                $product_ids = Product::getIdsForCategories($allcats);
+
+//            }
+//            else {
+//                $product_ids = $category->products()->select('cart_products.id')->enabled()->lists('cart_products.id');
+//            }
+
+            $product_ids_q[] = 'select product_id from cart_products_categories where category_id in ('.implode(',', $allcats).') AND product_id IN (SELECT id FROM cart_products WHERE status = \'A\')';
+
+            $filters = Filter::current2();
             $withTags = array_filter(explode(',', Input::get('with', $tags)));
             $tags = [];
 
-            $cacheKey = "cat-{$slug}";
             if ($filters && $withTags) {
-                $fil_prod_ids = Product::whereMeta($filters)->get()->lists('id');
-                list(, , $tag_prod_ids) = $this->getProductIdsForTags($withTags);
-                $product_ids = array_intersect($product_ids, $fil_prod_ids, $tag_prod_ids);
-                $products = Product::whereIn('id', $product_ids);
-                $products = $products->paginate(24);
-                $cacheKey .= "-filters-".implode(',', $filters)."-tags-".implode(',', $withTags)."-prods-".implode(',', $product_ids);
+                $product_ids_q = array_merge($product_ids_q, \Bonweb\Laradmin\ProductMeta::productsWithMeta($filters));
+                $product_ids_q = array_merge($product_ids_q, Tagged::getProductIdsQueryForTags($withTags));
             }
             elseif ($filters && !$withTags) {
-                $fil_prod_ids = Product::whereMeta($filters)->get()->lists('id');
-                $product_ids = array_intersect($product_ids, $fil_prod_ids);
-                $products = $lproducts = Product::whereIn('id', $product_ids);
-                $products = $products->paginate(24);
-                $cacheKey .= "-filters-".implode(',', $filters)."-prods-".implode(',', $product_ids);
+                $product_ids_q = array_merge($product_ids_q, \Bonweb\Laradmin\ProductMeta::productsWithMeta($filters));
             }
             elseif (!$filters && $withTags) {
-                list(, , $tag_prod_ids) = $this->getProductIdsForTags($withTags);
-                $product_ids = array_intersect($product_ids, $tag_prod_ids);
-                $products = Product::whereIn('id', $product_ids);
-                $products = $products->paginate(24);
-                $cacheKey = "-tags-".implode(',', $withTags)."-prods-".implode(',', $product_ids);
+                $product_ids_q = array_merge($product_ids_q, Tagged::getProductIdsQueryForTags($withTags));
             }
-            else {
-                $products = $category->products()->enabled()->paginate(24);
+            else { }
+
+            $products = Product::with('seo', 'photos', 'affiliateUrl', 'prices', 'metas', 'imported', 'imported.merchant');
+
+            foreach ($product_ids_q as $q) {
+                $products->whereRaw("cart_products.id IN ($q)");
             }
 
-//            $tags = Cache::remember($cacheKey, Config::get('laracart::general.cache.category'), function() use ($product_ids, $products, $withTags)
-//            {
-                $tags = Tagged::tagsForProductsAndSlugs($product_ids, $withTags);
-                //  remove tags that will not filter products and will create duplicates
-                if ($tags) {
-                    $c = $products->count();
-                    $tags->filter(function($tag) use ($c) { return ($c != $tag->count); });
-                }
-//                return $tags;
-//            });
+            if (Input::get('orderBy', '') == 'price') {
+                $products = $products
+                    ->join('cart_product_prices', 'cart_products.id', '=', 'cart_product_prices.product_id')
+                    ->orderBy('price', Input::get('orderType', 'asc'));
+            }
+            $products = $products->orderBy('cart_products.id', 'desc')//->with('seo', 'photos', 'affiliateUrl', 'prices', 'metas', 'imported', 'imported.merchant')
+                ->remember(Config::get('laracart::general.cache.category'))
+                ->paginate(24);
+
+            $tags = Tagged::tagsForProductsAndSlugs($product_ids_q, $withTags);
+            //  remove tags that will not filter products and will create duplicates
+            if ($tags) {
+                $c = $products->count();
+                $tags->filter(function($tag) use ($c) { return ($c != $tag->count); });
+            }
+
+//            if (Debugbar::isEnabled()) {
+//                return 'asd';
+//            }
 
             return View::make('laracart::site.category')
                     ->withCategory( $category )
                     ->withProducts( $products )
                     ->withTags( $tags )
-                    ->with('product_ids', $product_ids );
+                    ->with('product_ids', $product_ids_q );
         }
         else return Redirect::route('home', [], 301);
     }

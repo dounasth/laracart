@@ -18,9 +18,50 @@
 @stop
 
 @section('styles')
+    <link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/css/select2.min.css" rel="stylesheet" />
+    <link href="{{ Config::get('laradmin::general.asset_path') }}/css/bootstrap-tags/bootstrap-tagsinput.css" rel="stylesheet" type="text/css" />
 @stop
 
 @section('scripts')
+    <script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/select2.min.js"></script>
+    <script src="{{ Config::get('laradmin::general.asset_path') }}/js/bootstrap-tags/bootstrap-tagsinput.js" type="text/javascript"></script>
+    <script src="{{ Config::get('laradmin::general.asset_path') }}/js/typeahead.bundle.js" type="text/javascript"></script>
+    <script>
+        /* Categories */
+        var categories = new Bloodhound({
+            name: 'categories',
+            datumTokenizer: function(d) {
+                return Bloodhound.tokenizers.whitespace(d.name);
+            },
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            prefetch: {
+                url: '/json/categories',
+                cache: false
+            }
+        });
+        categories.initialize();
+
+        $('#main_category').tagsinput({
+            maxTags: 1,
+            freeInput: false,
+            itemValue: 'id',
+            itemText: 'name',
+            typeaheadjs: {
+                highlight: true,
+                limit: 20,
+                name: 'categories',
+                displayKey: 'name',
+                source: categories.ttAdapter()
+            }
+        });
+        $('#main_category').each(function(i, elm){
+            var id = $(elm).attr('data-selected-id');
+            if (id > 0) {
+                var name = $(elm).attr('data-selected-name');
+                $(elm).tagsinput('add', { "id": id , "name": name });
+            }
+        });
+    </script>
 @stop
 
 @section('content')
@@ -32,10 +73,11 @@
                 <h2>General</h2>
                 <div class="form-group">
                     {{ Form::label('parent_id', 'Parent:') }}
-                    <select name="category[parent_id]" class="form-control">
-                        <option value="">{{trans('laracart::general.select_one')}}</option>
-                        @include('laracart::categories.select-options', array('categories'=>$categories, 'selected'=>$category->parent_id, 'prefix'=>''))
-                    </select>
+                    <input id="main_category" type="text" name="category[parent_id]" value="{{ $category->parent_id }}"
+                           class="form-control categories" data-role="tagsinput"
+                           data-selected-id="{{ $category->parent_id }}"
+                           data-selected-name="{{ $category->parent ? $category->parent->path() : 0 }}"
+                    />
                 </div>
                 <div class="form-group">
                     {{ Form::label('title', 'Title:') }}

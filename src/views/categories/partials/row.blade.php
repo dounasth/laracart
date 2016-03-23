@@ -3,6 +3,7 @@
     <div class="dd3-content ">
         <div class="pull-left">
             <a class="translatable" href="{{route('cart.categories.update', [$category->id])}}">{{ $category->title }}</a>
+            ( {{ $category->enabledProductsCount()  }} )
         </div>
         @if (@$checkable)
         <div class="pull-right">

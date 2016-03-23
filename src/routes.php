@@ -8,8 +8,12 @@ Route::group(array('before' => '', 'after' => 'cache'), function() {
     Route::get(Config::get('laracart::slugs.tag').'/{slugs}', array('as' => 'site.cart.tag.view', 'uses' => 'LaracartProducts@viewTags'));//->where('filters', '(.*)');
 
     Route::get('/sitemap-categories.xml', array('as' => 'site.sitemap.categories', 'uses' => 'LaracartSitemapsController@categories'));
-    Route::get('/sitemap-tags.xml', array('as' => 'site.sitemap.tags', 'uses' => 'LaracartSitemapsController@tags'));
+//    Route::get('/sitemap-tags.xml', array('as' => 'site.sitemap.tags', 'uses' => 'LaracartSitemapsController@tags'));
     Route::get('/sitemap-coupons.xml', array('as' => 'site.sitemap.coupons', 'uses' => 'LaracartSitemapsController@coupons'));
+});
+
+Route::group(array('before' => 'auth', 'after' => '', 'prefix' => 'user'), function() {
+    Route::get('lists/{id?}', array('as' => 'site.user.lists', 'uses' => 'LaracartUserController@productLists'));
 });
 
 Route::group(array('before' => 'auth|auth.admin|init.admin', 'after' => '', 'prefix' => 'admin'), function() {

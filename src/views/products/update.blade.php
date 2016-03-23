@@ -26,16 +26,6 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/select2.min.js"></script>
 <script src="{{ Config::get('laradmin::general.asset_path') }}/js/bootstrap-tags/bootstrap-tagsinput.js" type="text/javascript"></script>
 <script src="{{ Config::get('laradmin::general.asset_path') }}/js/typeahead.bundle.js" type="text/javascript"></script>
-<script type="text/javascript" charset="utf-8">
-    /*$("#mainCategory").select2({
-        placeholder: "Select a main category",
-        allowClear: false
-    });
-    $("#additionalCategories").select2({
-        placeholder: "Select additional categories",
-        allowClear: true
-    });*/
-</script>
 <script>
     var tags = new Bloodhound({
         datumTokenizer: Bloodhound.tokenizers.obj.whitespace('name'),

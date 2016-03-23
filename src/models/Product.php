@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletingTrait;
 use Lanz\Commentable\Commentable;
 use Conner\Tagging\TaggableTrait;
 use Mmanos\Metable\Metable;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Product
@@ -249,7 +250,11 @@ class Product extends \Eloquent implements SluggableInterface{
             $this->photos()->save($link);
         }
         else {
-            $link = $this->photos()->where('link_type', '=', 'M')->first();
+//            $link = $this->photos()->where('link_type', '=', 'M')->first();
+            if ($this->photos) {
+                $link = $this->photos[0];
+            }
+            else $link = '';
         }
         return $link;
     }
@@ -362,5 +367,37 @@ class Product extends \Eloquent implements SluggableInterface{
         return $query->orderBy('id', 'desc');
     }
 
+    public static function getIdsForCategories($catids) {
+        if (fn_is_not_empty($catids)) {
+            $t = new static;
+//            $product_ids = ProductsCategories::whereIn('category_id', $catids)->remember(3600*24)->lists('product_id');
+//            if (fn_is_not_empty($product_ids)) {
+//                $query[] = "SELECT id FROM " . $t->table;
+//                $query[] = "WHERE status = 'A' AND deleted_at is null AND id IN ( " . implode(',', $product_ids) . " )";
+//                $query = implode(' ', $query);
+//                $data = \DB::select(\DB::raw($query))->remember(3600*24);
+                $data = \DB::table($t->table)
+                    ->select('id')
+                    ->where('status','=','A')
+                    ->whereNull('deleted_at')
+                    ->whereRaw(\DB::raw('id IN (select `product_id` from `cart_products_categories` where `category_id` in ('.implode(',', $catids).'))'))
+                    ->orderBy('id', 'desc')
+                    ->remember(3600*24)->get();
+                $data = Collection::make($data)->lists('id');
+                return $data;
+//            }
+//            else return false;
+        }
+        else return false;
+    }
+
+    public static function rawdb(){
+        $t = new Product();
+        return \DB::table($t->table);
+    }
+
+    public function imported() {
+        return $this->hasOne('ImportProducts', 'product_id', 'id');
+    }
 
 }
